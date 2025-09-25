@@ -1,173 +1,160 @@
-// ! Importante:
-// Es necesario componentes de Shadcn/ui
-// https://ui.shadcn.com/docs/installation/vite
+//!------------------------------------------------------------------------------------------------
+//!------------------------------------------------------------------------------------------------
+//! INSTRUCCIONES PARA CREAR EL PROYECTO DESDE CERO
+//SI CREAS EL PROYECTO DESDE CERO CON VITE + REACT + TYPESCRIPT
+// npm create vite@latest my-react-app -- --template react-ts
+// cd my-react-app
+// npm install
+// npm run dev
 
-import React, { useState } from "react";
+// ! Importante: creando el proyecto con Vite + React + TypeScript usamos shadcn/ui
+// Es necesario componentes de Shadcn/ui
+// https://ui.shadcn.com/docs/installation/ (usar TailwindCSS)
+// EN MIS REPOSITORIOS DE GITHUB TIENES UN EJEMPLO DE CÓMO INSTALAR SHADCN/UI Y TAILWINDCSS
+
+//! También es necesario instalar la librería de confetti
+// npm install canvas-confetti
+// npm i -D @types/canvas-confetti (para tener los tipos de TypeScript)
+//!------------------------------------------------------------------------------------------------
+//!------------------------------USO DE DISPATCH -------------------------------------------------
+//!------------------------------------------------------------------------------------------------
+
+///! ****SI DESCARGASTE O CLONASTE EL PROYECTO, ASEGÚRATE DE CORRER npm install *****
+//!para instalar las dependencias
+
+//! Este archivo es una versión que no usa useReducer ni el reducer
+//! El archivo ScrambleWordswithReducer.ts usa el reducer y useReducer para manejar el estado
+//!este es un ejemplo para comparar ambos enfoques aqui usamos useState para manejar el estado
+//! y en el otro archivo usamos useReducer y un reducer para manejar el estado
+
+// ***en este archivo aprenderemos a usar los dispatchers del reducer para actualizar el estado
+
+//!haremos otro archivo donde eliminaremos lo mas posible la logica del componente y la pondremos en el reducer
+//!haremos otro archivo donde eliminaremos lo mas posible la logica del componente y la pondremos en el reducer
+
+import React, { useReducer } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { SkipForward, Play } from "lucide-react";
+import confetti from "canvas-confetti"; // Importa la librería de confeti instalamos tambien los types con npm i -D @types/canvas-confetti
+import {
+  getInitialState,
+  scrambleWordsReducer,
+} from "@/reducers/scrambleWordsReducer";
 
-const GAME_WORDS = [
-  // Lista de palabras para el juego (EN MAYUSCULAS) PALABRAS VENEZOLANAS
-  "AREPA",
-  "MONTAÑA",
-  "SELVA",
-  "ESTRELLA",
-  "FIESTA",
-  "CARTELUO",
-  "CHINCHORRO",
-  "PANA",
-  "JEVA",
-  "CHAMO",
-  "CATIRA",
-  "CHURRERO",
-  "BECERRO",
-  "CHIVO",
-  "PUEBLO",
-  "PEPON",
-  "COLETO",
-  "CACHAPA",
-  "MORTADELA",
-  "TACHIPIRIN",
-  "AUYANTEPUI",
-  "PARAGUANA",
-  "YARACUY",
-  "PARCHITA",
-  "COCADA",
-  "CHICHA",
-  "PARGO",
-  "CACHAMA",
-  "TAMBOR",
-  "CUATRO",
-  "MORROCOY",
-  "TRUJILLO",
-  "TRIFULCA",
-  "TEQUEÑO",
-  "NAGUANAGUA",
-  "BAILOTEO",
-  "CULEBRA",
-  "GUAYABA",
-  "MELCOCHA",
-  "PAPELON",
-  "GUACHARO",
-  "TAPARITA",
-  "ZAMURO",
-  "CULEBRILLA",
-  "CACHICAMO",
-  "GUAYABERA",
-  "HALLACA",
-  "MEREY",
-  "MERENGADA",
-  "AGUACERO",
-  "MEREQUETENGUE",
-  "CACHAPERA",
-  "GENTIRIRIO",
-  "PERINOLA",
-  "HAMACA",
-  "ÑAPA",
-  "CHAMBEANDO",
-  "CHAPARRON",
-  "CARAOTA",
-  "FURRUCO",
-];
+// Lista de palabras para el juego (EN MAYUSCULAS) PALABRAS VENEZOLANAS pueden ser cualquier palabra
 
-// Esta función mezcla el arreglo para que siempre sea aleatorio
-const shuffleArray = (array: string[]) => {
-  //LE PASAMOS A SORT UNA FUNCIÓN QUE RETORNA UN NÚMERO ALEATORIO ENTRE -0.5 Y 0.5 PARA MEZCLAR EL ARREGLO
-  //0.5 ES LA MITAD DE 1, ASÍ QUE HAY IGUAL PROBABILIDAD DE QUE SEA POSITIVO O NEGATIVO
-  return array.sort(() => Math.random() - 0.5);
-};
+export const ScrambleWordsWithReducer = () => {
+  //obtenemos los datos de nuestro reducer
+  const [state, dispatch] = useReducer(scrambleWordsReducer, getInitialState());
+  const {
+    currentWord,
+    errorCounter,
+    isGameOver,
+    guess,
+    maxAllowErrors,
+    maxSkips,
+    points,
+    scrambledWord,
+    skipCounter,
+    words,
+    totalWords,
+  } = state;
 
-// Esta función mezcla las letras de la palabra
-const scrambleWord = (word: string = "") => {
-  return word
-    .split("") //separa la palabra en un arreglo de letras
-    .sort(() => Math.random() - 0.5) //mezcla el arreglo de letras
-    .join(""); //une el arreglo de letras en una palabra
-};
-
-export const ScrambleWords = () => {
-  const [words, setWords] = useState(shuffleArray(GAME_WORDS));
-
-  const [currentWord, setCurrentWord] = useState(words[0]);
-  const [scrambledWord, setScrambledWord] = useState(scrambleWord(currentWord));
-  const [guess, setGuess] = useState("");
-  const [points, setPoints] = useState(0);
-  const [errorCounter, setErrorCounter] = useState(0);
-  const [maxAllowErrors] = useState(3);
-
-  const [skipCounter, setSkipCounter] = useState(0);
-  const [maxSkips] = useState(3);
-
-  const [isGameOver, setIsGameOver] = useState(false);
-
-  // Previene el  de la página
   const handleGuessSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (errorCounter === maxAllowErrors) {
-      setIsGameOver(true);
-
-      return;
-    }
+    //s no hay palabras o el juego ha terminado, no hacemos nada
 
     if (!isGameOver && guess === currentWord) {
-      //si adivinamos la palabra
-      //eliminamos la palabra que ya adivinamosS
-      const newWords = words.filter((word) => word !== guess);
+      //DISPARAMOS UN CONFETI AQUÍ
+      confetti({
+        particleCount: 100, //número de partículas
+        spread: 120, //ángulo de dispersión + grande mas se dispersan
+        origin: { y: 0.6 }, // 60% es origen del confeti (0.6 es un poco más abajo del centro)
+      });
+
       //actualizamos los stats
+      const newWords = words.slice(1); //eliminamos la palabra actual porque siempre es la primera del arreglo
+      dispatch({ type: "SET_WORDS", payload: newWords });
+      dispatch({ type: "SET_CURRENT_WORD", payload: newWords[0] });
+      dispatch({ type: "SET_POINTS", payload: points + 1 });
+      dispatch({ type: "SET_GUESS", payload: "" }); //limpiamos el input
+      dispatch({
+        type: "SET_SCRAMBLED_WORD",
+        payload: newWords[0],
+      });
+      if (words.length === 0) {
+        dispatch({ type: "SET_IS_GAME_OVER", payload: true });
+        return; //salimos de la función
+      }
+      return; //salimos de la función
+    } //si no es correcta la adivinanza
+    //incrementamos el contador de errores
 
-      setPoints(points + 1);
-      setWords(shuffleArray(newWords));
-      setCurrentWord(newWords[0]);
-      setScrambledWord(scrambleWord(newWords[0]));
-      setGuess("");
+    dispatch({ type: "SET_ERROR_COUNTER", payload: errorCounter + 1 });
 
-      return;
+    //evaluamos si ya llegamos al máximo de errores permitidos
+    if (errorCounter + 1 === maxAllowErrors) {
+      // setIsGameOver(true); //si llegamos al máximo de errores se acaba el juego
+      dispatch({ type: "SET_IS_GAME_OVER", payload: true });
     }
-    //si no adivinamos la palabra contamos los errores
-    setErrorCounter(errorCounter + 1);
-    setGuess("");
-  };
+    //limpiamos el input
+    dispatch({ type: "SET_GUESS", payload: "" }); //limpiamos el input
+  }; //fin handleGuessSubmit
 
   const handleSkip = () => {
-    console.log("Palabra saltada");
-    //contamos
-    setSkipCounter(skipCounter + 1);
-    //eliminamos la palabra
-    const newWords = words.filter((word) => word !== guess);
-    setWords(shuffleArray(newWords));
-    setCurrentWord(newWords[0]);
-    setScrambledWord(scrambleWord(newWords[0]));
+    if (skipCounter >= maxSkips) {
+      return; //no se puede saltar más
+    }
+    //incrementamos el contador de saltos
+    dispatch({ type: "SET_SKIP_COUNTER", payload: skipCounter + 1 });
+    //eliminamos la palabra actual
+    const newWords = words.slice(1); //eliminamos la primera palabra del arreglo
+    dispatch({ type: "SET_WORDS", payload: newWords });
+    dispatch({ type: "SET_CURRENT_WORD", payload: newWords[0] });
+    dispatch({
+      type: "SET_SCRAMBLED_WORD",
+      payload: newWords[0],
+    });
+    dispatch({ type: "SET_GUESS", payload: "" }); //limpiamos el input
+  }; //fin handleSkip
 
-    setGuess("");
-  };
+  //eliminamos la palabra
 
   const handlePlayAgain = () => {
-    console.log("Jugar de nuevo");
     //REINICIALIZAMOS EL JUEGO
-    setIsGameOver(false);
-    setWords(shuffleArray(GAME_WORDS));
-    setSkipCounter(0);
-    setPoints(0);
-    setCurrentWord(GAME_WORDS[0]);
-    setScrambledWord(scrambleWord(GAME_WORDS[0]));
-    setErrorCounter(0);
-    setGuess("");
-  };
+    const initialState = getInitialState(); //obtenemos el estado inicial
+    //seteamos el estado inicial
+    dispatch({ type: "SET_WORDS", payload: initialState.words });
+    dispatch({
+      type: "SET_CURRENT_WORD",
+      payload: initialState.currentWord,
+    });
+    dispatch({ type: "SET_POINTS", payload: 0 });
+    dispatch({ type: "SET_ERROR_COUNTER", payload: 0 });
+    dispatch({ type: "SET_SKIP_COUNTER", payload: 0 });
+    dispatch({ type: "SET_IS_GAME_OVER", payload: false });
+    dispatch({ type: "SET_GUESS", payload: "" });
+    dispatch({
+      type: "SET_SCRAMBLED_WORD",
+      payload: initialState.scrambledWord,
+    });
+  }; //fin handlePlayAgain
 
-  //! Si ya no hay palabras para jugar, se muestra el mensaje de fin de juego
-  if (words.length === 0) {
+  // Si el juego ha terminado, mostramos el mensaje de fin de juego
+  if (isGameOver || words.length === 0) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-100 via-blue-50 to-indigo-100 flex items-center justify-center p-4">
         <div className="w-full max-w-md mx-auto">
           <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent mb-2">
-            Palabras desordenadas
+            Juego Terminado
           </h1>
-          <p className="text-gray-600">No hay palabras para jugar</p>
+          <p className="text-gray-600">Vuelve a Jugar!!</p>
           <br />
-          <div>Puntaje: {points}</div>
+          <div>
+            Puntaje: {points}/{totalWords}
+          </div>
           <br />
           <div>Errores: {errorCounter}</div>
           <br />
@@ -188,7 +175,7 @@ export const ScrambleWords = () => {
             Palabras Venezolanas
           </h1>
           <p className="text-gray-600">
-            ordena las letras para encontrar la palabra!
+            Ordena las letras para encontrar la palabra!
           </p>
         </div>
 
@@ -236,7 +223,9 @@ export const ScrambleWords = () => {
                     type="text"
                     value={guess}
                     onChange={(e) =>
-                      setGuess(e.target.value.toUpperCase().trim())
+                      // setGuess(e.target.value.toUpperCase().trim())
+                      //!cada vez que hagamos un setstate lo cambiamos por un dispatch
+                      dispatch({ type: "SET_GUESS", payload: e.target.value })
                     }
                     placeholder="Ingresa tu palabra..."
                     className="text-center text-lg font-semibold h-12 border-2 border-indigo-200 focus:border-indigo-500 transition-colors"
@@ -258,7 +247,7 @@ export const ScrambleWords = () => {
             <div className="grid grid-cols-2 gap-4 mb-6">
               <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg p-4 text-center border border-green-200">
                 <div className="text-2xl font-bold text-green-600">
-                  {points} / {GAME_WORDS.length}
+                  {points} / {totalWords}
                 </div>
                 <div className="text-sm text-green-700 font-medium">Puntos</div>
               </div>
@@ -318,5 +307,5 @@ export const ScrambleWords = () => {
         </div>
       </div>
     </div>
-  );
-};
+  ); //fin return
+}; //fin componente
