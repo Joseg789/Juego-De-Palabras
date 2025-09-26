@@ -1,15 +1,12 @@
 import type { ScrambleWordsState } from "@/interfaces/interfaces";
 import { scrambleWord } from "../helpers/helpers";
 
-//DEFINIMOS LAS ACCIONES
-//el payload es un parametro que se pasa a la acción y puede ser de cualquier tipo  u opcional
 export type ScrambleWordsAction =
   | { type: "SET_GUESS"; payload: string }
   | { type: "SKIP_WORD"; payload: string }
   | { type: "CHECK_ANSWER" } //sin payload
   | { type: "PLAY_AGAIN"; payload: ScrambleWordsState }; //el payload es el estado inicial
 
-//!SIEMPRE RECIBIMOS EL ESTADO Y LA ACCIÓN Y RETORNAMOS UN NUEVO ESTADO
 export const scrambleWordsReducerClean = (
   state: ScrambleWordsState,
   action: ScrambleWordsAction
